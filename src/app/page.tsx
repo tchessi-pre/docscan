@@ -2,11 +2,6 @@ import { DocumentList } from "@/components/DocumentList";
 import { UploadForm } from "@/components/UploadForm";
 import { createClient } from "@/lib/supabase/server";
 
-// Cache Components exige une limite <Suspense> pour tout rendu dynamique ; on
-// reste en rendu bloquant classique pour l'instant (cf. guide "Migrating an
-// existing app" des docs Next.js), le streaming viendra si besoin plus tard.
-export const instant = false;
-
 export default async function Home() {
   const supabase = await createClient();
   const { data: documents } = await supabase
