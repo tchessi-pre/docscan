@@ -65,14 +65,20 @@ export async function extractDocument({
   let lastError = "aucune réponse du modèle";
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
-    const message = await client.messages.create({
-      model: process.env.ANTHROPIC_MODEL ?? "claude-sonnet-5-5",
-      max_tokens: 4096,
-      system: getSystemPrompt(docType),
-      tools: [tool],
-      tool_choice: { type: "tool", name: TOOL_NAME },
-      messages,
-    });
+    let message: Anthropic.Message;
+    try {
+      message = await client.messages.create({
+        model: process.env.ANTHROPIC_MODEL ?? "claude-sonnet-5-5",
+        max_tokens: 4096,
+        system: getSystemPrompt(docType),
+        tools: [tool],
+        tool_choice: { type: "tool", name: TOOL_NAME },
+        messages,
+      });
+    } catch (cause) {
+      const errorMessage = cause instanceof Error ? cause.message : "erreur inconnue";
+      return { ok: false, error: `Appel à l'API Anthropic impossible : ${errorMessage}` };
+    }
 
     totalInputTokens += message.usage.input_tokens;
     totalOutputTokens += message.usage.output_tokens;

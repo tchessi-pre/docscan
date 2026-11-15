@@ -108,6 +108,18 @@ describe("extractDocument", () => {
     expect(createMock).toHaveBeenCalledTimes(1);
   });
 
+  it("échoue proprement (sans lever d'exception) si l'appel réseau échoue", async () => {
+    createMock.mockRejectedValueOnce(new Error("Connection error."));
+
+    const result = await extractDocument({ pdfBase64: "ZGF0YQ==", docType: "other" });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toContain("Connection error.");
+    }
+    expect(createMock).toHaveBeenCalledTimes(1);
+  });
+
   it("échoue immédiatement si ANTHROPIC_API_KEY est absente", async () => {
     delete process.env.ANTHROPIC_API_KEY;
 
