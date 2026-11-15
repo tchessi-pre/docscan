@@ -56,7 +56,7 @@ function FieldRow({
         />
         {!readOnly && (
           <Button type="button" size="sm" onClick={handleSave} disabled={isPending}>
-            Enregistrer
+            {isPending ? "Enregistrement…" : "Enregistrer"}
           </Button>
         )}
       </div>
