@@ -2,8 +2,11 @@
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { buildStoragePath } from "@/lib/documents/storage-path";
 import { validateUploadedFile } from "@/lib/documents/validate-upload";
+import { applyFieldEdit } from "@/lib/extraction/fields";
+import { extractedFieldSchema } from "@/lib/extraction/schemas";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
 
@@ -63,4 +66,65 @@ export async function uploadDocument(
 
   revalidatePath("/");
   return { ok: true, data: { id: documentId } };
+}
+
+export type ActionResult = { ok: true } | { ok: false; error: string };
+
+export async function updateField(
+  documentId: string,
+  fieldKey: string,
+  value: string,
+): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const { data: extraction, error: fetchError } = await supabase
+    .from("extractions")
+    .select("fields")
+    .eq("document_id", documentId)
+    .single();
+  if (fetchError || !extraction) {
+    return { ok: false, error: "Extraction introuvable." };
+  }
+
+  const parsedFields = z.array(extractedFieldSchema).safeParse(extraction.fields);
+  if (!parsedFields.success) {
+    return { ok: false, error: "Champs extraits invalides en base." };
+  }
+
+  const updatedFields = applyFieldEdit(parsedFields.data, fieldKey, value);
+
+  const { error: updateError } = await supabase
+    .from("extractions")
+    .update({ fields: updatedFields, edited: true })
+    .eq("document_id", documentId);
+  if (updateError) {
+    return { ok: false, error: updateError.message };
+  }
+
+  revalidatePath(`/documents/${documentId}`);
+  return { ok: true };
+}
+
+export async function validateDocument(documentId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const { error: extractionError } = await supabase
+    .from("extractions")
+    .update({ validated_at: new Date().toISOString() })
+    .eq("document_id", documentId);
+  if (extractionError) {
+    return { ok: false, error: extractionError.message };
+  }
+
+  const { error: documentError } = await supabase
+    .from("documents")
+    .update({ status: "validated" })
+    .eq("id", documentId);
+  if (documentError) {
+    return { ok: false, error: documentError.message };
+  }
+
+  revalidatePath(`/documents/${documentId}`);
+  revalidatePath("/");
+  return { ok: true };
 }

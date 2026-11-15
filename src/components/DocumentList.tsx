@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -31,7 +32,11 @@ export function DocumentList({ documents }: { documents: DocumentRow[] }) {
       <TableBody>
         {documents.map((doc) => (
           <TableRow key={doc.id}>
-            <TableCell>{doc.filename}</TableCell>
+            <TableCell>
+              <Link href={`/documents/${doc.id}`} className="underline underline-offset-2">
+                {doc.filename}
+              </Link>
+            </TableCell>
             <TableCell>{DOC_TYPE_LABELS[doc.doc_type]}</TableCell>
             <TableCell>{STATUS_LABELS[doc.status]}</TableCell>
             <TableCell>{new Date(doc.created_at).toLocaleDateString("fr-FR")}</TableCell>
