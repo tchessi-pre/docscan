@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Eye, EyeOff, FileJson, FileSpreadsheet, Save } from "lucide-react";
+import { CheckCircle2, Eye, EyeOff, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -127,30 +127,10 @@ export function FieldsTable({
         </Button>
       )}
       {readOnly && (
-        <div className="flex flex-col gap-2">
-          <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <CheckCircle2 className="size-4 text-green-600 dark:text-green-400" />
-            Document validé.
-          </p>
-          <div className="flex gap-4">
-            <a
-              href={`/api/documents/${documentId}/export?format=json`}
-              download
-              className="inline-flex items-center gap-1 text-sm underline underline-offset-2"
-            >
-              <FileJson className="size-4" />
-              Export JSON
-            </a>
-            <a
-              href={`/api/documents/${documentId}/export?format=csv`}
-              download
-              className="inline-flex items-center gap-1 text-sm underline underline-offset-2"
-            >
-              <FileSpreadsheet className="size-4" />
-              Export CSV
-            </a>
-          </div>
-        </div>
+        <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <CheckCircle2 className="size-4 text-green-600 dark:text-green-400" />
+          Document validé.
+        </p>
       )}
     </div>
   );

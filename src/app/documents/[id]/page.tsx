@@ -1,4 +1,4 @@
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, FileJson, FileSpreadsheet, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
@@ -6,6 +6,7 @@ import { AnalyzeButton } from "@/components/AnalyzeButton";
 import { FieldsTable } from "@/components/FieldsTable";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DOC_TYPE_LABELS,
@@ -54,8 +55,8 @@ export default async function DocumentDetailPage({
   const StatusIcon = STATUS_ICONS[document.status];
 
   return (
-    <main className="mx-auto flex h-screen max-w-6xl flex-col gap-4 px-6 py-8">
-      <div className="flex items-start justify-between gap-2">
+    <main className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col gap-6 px-6 py-8 lg:h-dvh lg:overflow-hidden">
+      <header className="flex flex-wrap items-start justify-between gap-4 border-b pb-4">
         <div className="flex flex-col gap-2">
           <Link
             href="/"
@@ -75,10 +76,44 @@ export default async function DocumentDetailPage({
           </div>
           <p className="text-sm text-muted-foreground">{DOC_TYPE_LABELS[document.doc_type]}</p>
         </div>
-        <ThemeToggle />
-      </div>
-      <div className="grid flex-1 grid-cols-1 gap-6 overflow-hidden md:grid-cols-2">
-        <div className="min-h-[50vh] overflow-hidden rounded-lg border bg-muted/30">
+        <div className="flex flex-wrap items-center gap-2">
+          {document.status === "validated" && parsedFields?.success && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                nativeButton={false}
+                render={
+                  <a
+                    href={`/api/documents/${document.id}/export?format=json`}
+                    download
+                  />
+                }
+              >
+                <FileJson />
+                Export JSON
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                nativeButton={false}
+                render={
+                  <a
+                    href={`/api/documents/${document.id}/export?format=csv`}
+                    download
+                  />
+                }
+              >
+                <FileSpreadsheet />
+                Export CSV
+              </Button>
+            </>
+          )}
+          <ThemeToggle />
+        </div>
+      </header>
+      <div className="grid flex-1 grid-cols-1 gap-6 md:grid-cols-2 lg:min-h-0">
+        <div className="min-h-[50vh] overflow-hidden rounded-lg border bg-muted/30 lg:min-h-0">
           {signedUrlData?.signedUrl ? (
             <iframe
               src={signedUrlData.signedUrl}
@@ -89,7 +124,7 @@ export default async function DocumentDetailPage({
             <p className="p-4 text-sm text-muted-foreground">PDF indisponible.</p>
           )}
         </div>
-        <div className="overflow-y-auto">
+        <div className="lg:min-h-0 lg:overflow-y-auto">
           <Card>
             <CardHeader>
               <CardTitle>Extraction</CardTitle>
@@ -116,6 +151,12 @@ export default async function DocumentDetailPage({
                   readOnly={document.status === "validated"}
                 />
               )}
+              {(document.status === "extracted" || document.status === "validated") &&
+                !parsedFields?.success && (
+                  <p className="text-sm text-muted-foreground">
+                    Aucun champ extrait pour ce document.
+                  </p>
+                )}
             </CardContent>
           </Card>
         </div>
