@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   collectExtractedFields,
+  convertSentinels,
   extractedFieldSchema,
   otherSchema,
   quoteSchema,
@@ -163,5 +164,63 @@ describe("toToolInputSchema", () => {
     expect(jsonSchema.required).toEqual(
       expect.arrayContaining(["emetteur", "montant_ttc", "lignes_principales"]),
     );
+  });
+
+  it("ne contient pas de minimum/maximum (non supportés par l'API Anthropic)", () => {
+    const jsonSchema = JSON.stringify(toToolInputSchema(quoteSchema));
+
+    expect(jsonSchema).not.toContain("minimum");
+    expect(jsonSchema).not.toContain("maximum");
+  });
+
+  it("ne contient aucun champ nullable/union (limite de 16 de l'API Anthropic)", () => {
+    const jsonSchema = JSON.stringify(toToolInputSchema(quoteSchema));
+
+    expect(jsonSchema).not.toContain("anyOf");
+    expect(jsonSchema).not.toContain('"null"');
+  });
+});
+
+describe("convertSentinels", () => {
+  it("convertit les sentinelles (\"\"/0) en vrais null", () => {
+    const wireField = {
+      key: "montant_ttc",
+      label: "Montant TTC",
+      value: "",
+      page: 0,
+      quote: "",
+      confidence: "low",
+    };
+
+    expect(convertSentinels(wireField)).toEqual(field());
+  });
+
+  it("laisse une valeur renseignée inchangée", () => {
+    const wireField = {
+      key: "montant_ttc",
+      label: "Montant TTC",
+      value: "1200.00 €",
+      page: 2,
+      quote: "Montant TTC : 1200.00 €",
+      confidence: "high",
+    };
+
+    expect(convertSentinels(wireField)).toEqual(wireField);
+  });
+
+  it("convertit récursivement dans les tableaux et objets imbriqués", () => {
+    const parsed = {
+      lignes_principales: [
+        {
+          designation: { key: "a", label: "A", value: "", page: 0, quote: "", confidence: "low" },
+        },
+      ],
+    };
+
+    const result = convertSentinels(parsed) as {
+      lignes_principales: Array<{ designation: { value: null } }>;
+    };
+
+    expect(result.lignes_principales[0].designation.value).toBeNull();
   });
 });

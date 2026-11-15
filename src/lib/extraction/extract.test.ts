@@ -36,21 +36,27 @@ const validOtherPayload = {
   dates_montants: [field({ key: "montant_1" })],
 };
 
-function toolUseMessage(input: unknown) {
+function jsonMessage(payload: unknown) {
   return {
     model: "claude-sonnet-5-5",
     usage: { input_tokens: 100, output_tokens: 50 },
-    content: [
-      { type: "tool_use", id: "tool_1", name: "record_extraction", input },
-    ],
+    content: [{ type: "text", text: JSON.stringify(payload) }],
   };
 }
 
-function textOnlyMessage() {
+function textMessage(text: string) {
   return {
     model: "claude-sonnet-5-5",
     usage: { input_tokens: 10, output_tokens: 5 },
-    content: [{ type: "text", text: "je ne peux pas faire ça" }],
+    content: [{ type: "text", text }],
+  };
+}
+
+function noTextMessage() {
+  return {
+    model: "claude-sonnet-5-5",
+    usage: { input_tokens: 10, output_tokens: 5 },
+    content: [],
   };
 }
 
@@ -61,7 +67,7 @@ beforeEach(() => {
 
 describe("extractDocument", () => {
   it("retourne les champs aplatis quand la sortie est valide du premier coup", async () => {
-    createMock.mockResolvedValueOnce(toolUseMessage(validOtherPayload));
+    createMock.mockResolvedValueOnce(jsonMessage(validOtherPayload));
 
     const result = await extractDocument({ pdfBase64: "ZGF0YQ==", docType: "other" });
 
@@ -72,12 +78,16 @@ describe("extractDocument", () => {
       expect(result.data.outputTokens).toBe(50);
     }
     expect(createMock).toHaveBeenCalledTimes(1);
+
+    const callParams = createMock.mock.calls[0][0];
+    expect(callParams.output_config.format.type).toBe("json_schema");
+    expect(callParams.tools).toBeUndefined();
   });
 
   it("retente une fois en cas de sortie invalide, puis réussit", async () => {
     createMock
-      .mockResolvedValueOnce(toolUseMessage({ titre: field() }))
-      .mockResolvedValueOnce(toolUseMessage(validOtherPayload));
+      .mockResolvedValueOnce(jsonMessage({ titre: field() }))
+      .mockResolvedValueOnce(jsonMessage(validOtherPayload));
 
     const result = await extractDocument({ pdfBase64: "ZGF0YQ==", docType: "other" });
 
@@ -86,12 +96,23 @@ describe("extractDocument", () => {
 
     const secondCallParams = createMock.mock.calls[1][0];
     expect(secondCallParams.messages).toHaveLength(3);
-    expect(secondCallParams.messages[2].content[0].type).toBe("tool_result");
-    expect(secondCallParams.messages[2].content[0].is_error).toBe(true);
+    expect(secondCallParams.messages[1].role).toBe("assistant");
+    expect(secondCallParams.messages[2].role).toBe("user");
+  });
+
+  it("retente une fois si la sortie n'est pas un JSON valide, puis réussit", async () => {
+    createMock
+      .mockResolvedValueOnce(textMessage("ceci n'est pas du json"))
+      .mockResolvedValueOnce(jsonMessage(validOtherPayload));
+
+    const result = await extractDocument({ pdfBase64: "ZGF0YQ==", docType: "other" });
+
+    expect(result.ok).toBe(true);
+    expect(createMock).toHaveBeenCalledTimes(2);
   });
 
   it("échoue après le nombre maximum de tentatives invalides", async () => {
-    createMock.mockResolvedValue(toolUseMessage({ titre: field() }));
+    createMock.mockResolvedValue(jsonMessage({ titre: field() }));
 
     const result = await extractDocument({ pdfBase64: "ZGF0YQ==", docType: "other" });
 
@@ -99,8 +120,8 @@ describe("extractDocument", () => {
     expect(createMock).toHaveBeenCalledTimes(2);
   });
 
-  it("échoue si le modèle n'appelle pas l'outil record_extraction", async () => {
-    createMock.mockResolvedValueOnce(textOnlyMessage());
+  it("échoue si le modèle ne renvoie aucun bloc de texte", async () => {
+    createMock.mockResolvedValueOnce(noTextMessage());
 
     const result = await extractDocument({ pdfBase64: "ZGF0YQ==", docType: "other" });
 

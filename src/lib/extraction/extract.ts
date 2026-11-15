@@ -2,13 +2,13 @@ import Anthropic from "@anthropic-ai/sdk";
 import { getSystemPrompt } from "./prompt";
 import {
   collectExtractedFields,
+  convertSentinels,
   extractionSchemas,
   toToolInputSchema,
   type DocType,
   type ExtractedField,
 } from "./schemas";
 
-const TOOL_NAME = "record_extraction";
 const MAX_ATTEMPTS = 2;
 
 export type ExtractDocumentResult =
@@ -37,11 +37,7 @@ export async function extractDocument({
 
   const client = new Anthropic({ apiKey });
   const schema = extractionSchemas[docType];
-  const tool: Anthropic.Tool = {
-    name: TOOL_NAME,
-    description: "Enregistre les champs extraits du document.",
-    input_schema: toToolInputSchema(schema) as Anthropic.Tool.InputSchema,
-  };
+  const jsonSchema = toToolInputSchema(schema) as Record<string, unknown>;
 
   const messages: Anthropic.MessageParam[] = [
     {
@@ -71,8 +67,9 @@ export async function extractDocument({
         model: process.env.ANTHROPIC_MODEL ?? "claude-sonnet-5-5",
         max_tokens: 4096,
         system: getSystemPrompt(docType),
-        tools: [tool],
-        tool_choice: { type: "tool", name: TOOL_NAME },
+        output_config: {
+          format: { type: "json_schema", schema: jsonSchema },
+        },
         messages,
       });
     } catch (cause) {
@@ -83,16 +80,33 @@ export async function extractDocument({
     totalInputTokens += message.usage.input_tokens;
     totalOutputTokens += message.usage.output_tokens;
 
-    const toolUse = message.content.find(
-      (block): block is Anthropic.ToolUseBlock => block.type === "tool_use",
+    const textBlock = message.content.find(
+      (block): block is Anthropic.TextBlock => block.type === "text",
     );
 
-    if (!toolUse) {
-      lastError = "le modèle n'a pas appelé l'outil record_extraction";
+    if (!textBlock) {
+      lastError = "le modèle n'a renvoyé aucun texte";
       break;
     }
 
-    const parsed = schema.safeParse(toolUse.input);
+    let rawOutput: unknown;
+    try {
+      rawOutput = JSON.parse(textBlock.text);
+    } catch {
+      lastError = "la réponse du modèle n'est pas un JSON valide";
+      if (attempt < MAX_ATTEMPTS) {
+        messages.push(
+          { role: "assistant", content: textBlock.text },
+          {
+            role: "user",
+            content: `Ta réponse précédente n'était pas un JSON valide. Corrige et renvoie un JSON complet et valide respectant le schéma attendu.`,
+          },
+        );
+      }
+      continue;
+    }
+
+    const parsed = schema.safeParse(convertSentinels(rawOutput));
     if (parsed.success) {
       return {
         ok: true,
@@ -109,27 +123,10 @@ export async function extractDocument({
 
     if (attempt < MAX_ATTEMPTS) {
       messages.push(
-        {
-          role: "assistant",
-          content: [
-            {
-              type: "tool_use",
-              id: toolUse.id,
-              name: toolUse.name,
-              input: toolUse.input,
-            },
-          ],
-        },
+        { role: "assistant", content: textBlock.text },
         {
           role: "user",
-          content: [
-            {
-              type: "tool_result",
-              tool_use_id: toolUse.id,
-              is_error: true,
-              content: `Sortie invalide : ${lastError}. Corrige et renvoie un résultat complet et valide.`,
-            },
-          ],
+          content: `Sortie invalide : ${lastError}. Corrige et renvoie un JSON complet et valide respectant strictement le schéma attendu.`,
         },
       );
     }

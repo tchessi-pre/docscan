@@ -60,8 +60,90 @@ export const extractionSchemas = {
 
 export type DocType = keyof typeof extractionSchemas;
 
+// L'API Anthropic (structured outputs) rejette minimum/maximum sur les
+// entiers ; z.number().int() les ajoute pourtant (bornes de sécurité JS).
+// On les retire du schéma envoyé, sans toucher à la validation Zod interne.
+function stripNumericBounds(node: unknown): unknown {
+  if (Array.isArray(node)) {
+    return node.map(stripNumericBounds);
+  }
+  if (node && typeof node === "object") {
+    return Object.fromEntries(
+      Object.entries(node as Record<string, unknown>)
+        .filter(([key]) => key !== "minimum" && key !== "maximum")
+        .map(([key, value]) => [key, stripNumericBounds(value)]),
+    );
+  }
+  return node;
+}
+
+// Anthropic limite à 16 le nombre de champs nullable/union dans un schéma
+// ("structured outputs"). Nos schémas en dépassent largement à cause des
+// value/page/quote nullable de chaque ExtractedField. On envoie donc au
+// modèle une version "wire" sans null (sentinelles : "" / 0), puis on la
+// reconvertit en vrais null avant de valider avec les schémas réels
+// (extractedFieldSchema etc., inchangés).
+const wireExtractedFieldSchema = z.object({
+  key: z.string(),
+  label: z.string(),
+  value: z.string(),
+  page: z.number().int(),
+  quote: z.string(),
+  confidence: z.enum(["high", "medium", "low"]),
+});
+
+function toWireNode(node: z.ZodType): z.ZodType {
+  if (node === extractedFieldSchema) {
+    return wireExtractedFieldSchema;
+  }
+  if (node instanceof z.ZodArray) {
+    return z.array(toWireNode(node.element as z.ZodType));
+  }
+  if (node instanceof z.ZodObject) {
+    const wireShape = Object.fromEntries(
+      Object.entries(node.shape).map(([key, value]) => [key, toWireNode(value as z.ZodType)]),
+    );
+    return z.object(wireShape);
+  }
+  return node;
+}
+
 export function toToolInputSchema(schema: z.ZodType) {
-  return z.toJSONSchema(schema);
+  return stripNumericBounds(z.toJSONSchema(toWireNode(schema)));
+}
+
+function isWireField(value: unknown): value is Record<string, unknown> {
+  return (
+    !!value &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    "value" in value &&
+    "page" in value &&
+    "quote" in value &&
+    "confidence" in value
+  );
+}
+
+// Convertit les sentinelles ("" / 0) renvoyées par le modèle en vrais null,
+// avant validation avec les schémas réels (nullable).
+export function convertSentinels(node: unknown): unknown {
+  if (Array.isArray(node)) {
+    return node.map(convertSentinels);
+  }
+  if (isWireField(node)) {
+    return {
+      ...node,
+      value: node.value === "" ? null : node.value,
+      page: node.page === 0 ? null : node.page,
+      quote: node.quote === "" ? null : node.quote,
+    };
+  }
+  if (node && typeof node === "object") {
+    return Object.fromEntries(
+      Object.entries(node).map(([key, value]) => [key, convertSentinels(value)]),
+    );
+  }
+  return node;
 }
 
 export function collectExtractedFields(value: unknown): ExtractedField[] {

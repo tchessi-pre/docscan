@@ -1,8 +1,8 @@
 import type { DocType } from "./schemas";
 
 const COMMON_RULES = `Règles impératives :
-- Ne jamais inventer une information : si elle est absente du document, mets "value" à null.
-- Quand "value" n'est pas null, renseigne toujours "page" (numéro de page, 1-indexé) et "quote" (courte citation du document qui justifie la valeur).
+- Ne jamais inventer une information : si elle est absente du document, mets "value" à une chaîne vide "".
+- Quand "value" n'est pas vide, renseigne toujours "page" (numéro de page, 1-indexé — jamais 0) et "quote" (courte citation du document qui justifie la valeur) ; sinon laisse "page" à 0 et "quote" à "".
 - Mets "confidence" à "low" si l'information est ambiguë ou déduite plutôt que lue directement, "medium" en cas de doute léger, "high" sinon.
 - Pour chaque champ, renseigne "key" (identifiant stable en snake_case, ex. "montant_ttc") et "label" (libellé humain en français, ex. "Montant TTC").`;
 
