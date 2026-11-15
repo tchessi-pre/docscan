@@ -3,6 +3,7 @@
 import { Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { deleteDocument } from "@/app/documents/actions";
 import {
   AlertDialog,
@@ -27,49 +28,45 @@ export function DeleteDocumentButton({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
 
   function handleConfirm() {
     setOpen(false);
-    setError(null);
     startTransition(async () => {
       const result = await deleteDocument(documentId);
       if (!result.ok) {
-        setError(result.error);
+        toast.error(result.error);
         return;
       }
+      toast.success(`« ${filename} » supprimé.`);
       router.refresh();
     });
   }
 
   return (
-    <div className="flex flex-col gap-1">
-      <AlertDialog open={open} onOpenChange={setOpen}>
-        <AlertDialogTrigger
-          render={
-            <Button type="button" variant="destructive" size="sm" disabled={isPending}>
-              <Trash2 />
-              {isPending ? "Suppression…" : "Supprimer"}
-            </Button>
-          }
-        />
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer ce document ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              « {filename} » et son extraction seront définitivement supprimés. Cette
-              action est irréversible.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction variant="destructive" onClick={handleConfirm}>
-              Supprimer
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      {error && <p className="text-xs text-destructive">{error}</p>}
-    </div>
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger
+        render={
+          <Button type="button" variant="destructive" size="sm" disabled={isPending}>
+            <Trash2 />
+            {isPending ? "Suppression…" : "Supprimer"}
+          </Button>
+        }
+      />
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Supprimer ce document ?</AlertDialogTitle>
+          <AlertDialogDescription>
+            « {filename} » et son extraction seront définitivement supprimés. Cette action
+            est irréversible.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Annuler</AlertDialogCancel>
+          <AlertDialogAction variant="destructive" onClick={handleConfirm}>
+            Supprimer
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

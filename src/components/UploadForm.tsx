@@ -1,12 +1,12 @@
 "use client";
 
-import { CheckCircle2, FileText, Upload } from "lucide-react";
-import { useActionState } from "react";
+import { FileText, Upload } from "lucide-react";
+import { useActionState, useEffect } from "react";
+import { toast } from "sonner";
 import { uploadDocument, type UploadDocumentResult } from "@/app/documents/actions";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { FileDropzone } from "@/components/FileDropzone";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -27,6 +27,15 @@ async function action(
 export function UploadForm() {
   const [state, formAction, isPending] = useActionState(action, null);
 
+  useEffect(() => {
+    if (!state) return;
+    if (state.ok) {
+      toast.success("Document envoyé.");
+    } else {
+      toast.error(state.error);
+    }
+  }, [state]);
+
   return (
     <Card>
       <CardHeader>
@@ -39,7 +48,7 @@ export function UploadForm() {
         <form action={formAction} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="file">Fichier PDF</Label>
-            <Input id="file" type="file" name="file" accept="application/pdf" required />
+            <FileDropzone key={state?.ok ? state.data.id : "idle"} id="file" name="file" />
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="docType">Type de document</Label>
@@ -60,17 +69,6 @@ export function UploadForm() {
             <Upload />
             {isPending ? "Envoi…" : "Uploader"}
           </Button>
-          {state && !state.ok && (
-            <Alert variant="destructive">
-              <AlertDescription>{state.error}</AlertDescription>
-            </Alert>
-          )}
-          {state?.ok && (
-            <Alert>
-              <CheckCircle2 className="size-4" />
-              <AlertDescription>Document envoyé.</AlertDescription>
-            </Alert>
-          )}
         </form>
       </CardContent>
     </Card>

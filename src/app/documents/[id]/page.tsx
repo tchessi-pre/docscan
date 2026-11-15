@@ -4,8 +4,14 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { AnalyzeButton } from "@/components/AnalyzeButton";
 import { FieldsTable } from "@/components/FieldsTable";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Badge } from "@/components/ui/badge";
-import { DOC_TYPE_LABELS, STATUS_BADGE_CLASSES, STATUS_LABELS } from "@/lib/documents/labels";
+import {
+  DOC_TYPE_LABELS,
+  STATUS_BADGE_CLASSES,
+  STATUS_ICONS,
+  STATUS_LABELS,
+} from "@/lib/documents/labels";
 import { extractedFieldSchema } from "@/lib/extraction/schemas";
 import { createClient } from "@/lib/supabase/server";
 
@@ -44,24 +50,31 @@ export default async function DocumentDetailPage({
   const parsedFields = extraction
     ? z.array(extractedFieldSchema).safeParse(extraction.fields)
     : null;
+  const StatusIcon = STATUS_ICONS[document.status];
 
   return (
     <main className="mx-auto flex h-screen max-w-6xl flex-col gap-4 p-8">
-      <div className="flex flex-col gap-2">
-        <Link
-          href="/"
-          className="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground underline underline-offset-2"
-        >
-          <ArrowLeft className="size-3.5" />
-          Retour à la liste
-        </Link>
-        <div className="flex items-center gap-3">
-          <h1 className="text-xl font-semibold">{document.filename}</h1>
-          <Badge variant="outline" className={STATUS_BADGE_CLASSES[document.status]}>
-            {STATUS_LABELS[document.status]}
-          </Badge>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex flex-col gap-2">
+          <Link
+            href="/"
+            className="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground underline underline-offset-2"
+          >
+            <ArrowLeft className="size-3.5" />
+            Retour à la liste
+          </Link>
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-semibold">{document.filename}</h1>
+            <Badge variant="outline" className={STATUS_BADGE_CLASSES[document.status]}>
+              <StatusIcon
+                className={`size-3 ${document.status === "processing" ? "animate-spin" : ""}`}
+              />
+              {STATUS_LABELS[document.status]}
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground">{DOC_TYPE_LABELS[document.doc_type]}</p>
         </div>
-        <p className="text-sm text-muted-foreground">{DOC_TYPE_LABELS[document.doc_type]}</p>
+        <ThemeToggle />
       </div>
       <div className="grid flex-1 grid-cols-1 gap-6 overflow-hidden md:grid-cols-2">
         <div className="min-h-[50vh] overflow-hidden rounded-lg border">

@@ -1,3 +1,15 @@
+import {
+  AlertCircle,
+  AlertTriangle,
+  CheckCircle2,
+  ClipboardList,
+  Clock,
+  FileText,
+  Loader2,
+  Receipt,
+  XCircle,
+  type LucideIcon,
+} from "lucide-react";
 import type { ExtractedField } from "@/lib/extraction/schemas";
 import type { Database } from "@/lib/supabase/database.types";
 
@@ -5,6 +17,12 @@ export const DOC_TYPE_LABELS: Record<Database["public"]["Enums"]["doc_type"], st
   quote: "Devis",
   specification: "Cahier des charges",
   other: "Autre",
+};
+
+export const DOC_TYPE_ICONS: Record<Database["public"]["Enums"]["doc_type"], LucideIcon> = {
+  quote: Receipt,
+  specification: ClipboardList,
+  other: FileText,
 };
 
 export const STATUS_LABELS: Record<Database["public"]["Enums"]["doc_status"], string> = {
@@ -23,6 +41,14 @@ export const STATUS_BADGE_CLASSES: Record<Database["public"]["Enums"]["doc_statu
   failed: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300",
 };
 
+export const STATUS_ICONS: Record<Database["public"]["Enums"]["doc_status"], LucideIcon> = {
+  uploaded: Clock,
+  processing: Loader2,
+  extracted: FileText,
+  validated: CheckCircle2,
+  failed: XCircle,
+};
+
 export const CONFIDENCE_LABELS: Record<ExtractedField["confidence"], string> = {
   high: "Fiable",
   medium: "À vérifier",
@@ -33,4 +59,10 @@ export const CONFIDENCE_BADGE_CLASSES: Record<ExtractedField["confidence"], stri
   high: "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300",
   medium: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
   low: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300",
+};
+
+export const CONFIDENCE_ICONS: Record<ExtractedField["confidence"], LucideIcon> = {
+  high: CheckCircle2,
+  medium: AlertCircle,
+  low: AlertTriangle,
 };

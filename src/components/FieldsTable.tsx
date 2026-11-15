@@ -1,20 +1,18 @@
 "use client";
 
-import {
-  CheckCircle2,
-  Eye,
-  EyeOff,
-  FileJson,
-  FileSpreadsheet,
-  Save,
-} from "lucide-react";
+import { CheckCircle2, Eye, EyeOff, FileJson, FileSpreadsheet, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { updateField, validateDocument } from "@/app/documents/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CONFIDENCE_BADGE_CLASSES, CONFIDENCE_LABELS } from "@/lib/documents/labels";
+import {
+  CONFIDENCE_BADGE_CLASSES,
+  CONFIDENCE_ICONS,
+  CONFIDENCE_LABELS,
+} from "@/lib/documents/labels";
 import type { ExtractedField } from "@/lib/extraction/schemas";
 
 function FieldRow({
@@ -30,16 +28,16 @@ function FieldRow({
   const [value, setValue] = useState(field.value ?? "");
   const [showCitation, setShowCitation] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
+  const ConfidenceIcon = CONFIDENCE_ICONS[field.confidence];
 
   function handleSave() {
-    setError(null);
     startTransition(async () => {
       const result = await updateField(documentId, field.key, value);
       if (!result.ok) {
-        setError(result.error);
+        toast.error(result.error);
         return;
       }
+      toast.success(`« ${field.label} » enregistré.`);
       router.refresh();
     });
   }
@@ -49,6 +47,7 @@ function FieldRow({
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm font-medium">{field.label}</span>
         <Badge variant="outline" className={CONFIDENCE_BADGE_CLASSES[field.confidence]}>
+          <ConfidenceIcon className="size-3" />
           {CONFIDENCE_LABELS[field.confidence]}
         </Badge>
       </div>
@@ -81,7 +80,6 @@ function FieldRow({
           {field.quote !== null ? `« ${field.quote} »` : "Aucune citation."}
         </p>
       )}
-      {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );
 }
@@ -97,16 +95,15 @@ export function FieldsTable({
 }) {
   const router = useRouter();
   const [isValidating, startValidating] = useTransition();
-  const [validateError, setValidateError] = useState<string | null>(null);
 
   function handleValidate() {
-    setValidateError(null);
     startValidating(async () => {
       const result = await validateDocument(documentId);
       if (!result.ok) {
-        setValidateError(result.error);
+        toast.error(result.error);
         return;
       }
+      toast.success("Document validé.");
       router.refresh();
     });
   }
@@ -155,7 +152,6 @@ export function FieldsTable({
           </div>
         </div>
       )}
-      {validateError && <p className="text-sm text-destructive">{validateError}</p>}
     </div>
   );
 }
