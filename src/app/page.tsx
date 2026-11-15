@@ -1,9 +1,11 @@
-import { Info, ScanText } from "lucide-react";
+import { DatabaseZap, Info, ScanText } from "lucide-react";
+import Link from "next/link";
 import { DocumentList } from "@/components/DocumentList";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { UploadForm } from "@/components/UploadForm";
 import { UserMenu } from "@/components/UserMenu";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function Home() {
@@ -28,6 +30,10 @@ export default async function Home() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" nativeButton={false} render={<Link href="/data" />}>
+            <DatabaseZap />
+            Données extraites
+          </Button>
           <UserMenu />
           <ThemeToggle />
         </div>
