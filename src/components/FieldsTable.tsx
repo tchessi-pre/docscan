@@ -1,17 +1,21 @@
 "use client";
 
+import {
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  FileJson,
+  FileSpreadsheet,
+  Save,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { updateField, validateDocument } from "@/app/documents/actions";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CONFIDENCE_BADGE_CLASSES, CONFIDENCE_LABELS } from "@/lib/documents/labels";
 import type { ExtractedField } from "@/lib/extraction/schemas";
-
-const CONFIDENCE_LABELS: Record<ExtractedField["confidence"], string> = {
-  high: "Fiable",
-  medium: "À vérifier",
-  low: "Incertain",
-};
 
 function FieldRow({
   documentId,
@@ -44,9 +48,9 @@ function FieldRow({
     <div className="flex flex-col gap-1.5 border-b pb-3">
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm font-medium">{field.label}</span>
-        <span className="text-xs text-muted-foreground">
+        <Badge variant="outline" className={CONFIDENCE_BADGE_CLASSES[field.confidence]}>
           {CONFIDENCE_LABELS[field.confidence]}
-        </span>
+        </Badge>
       </div>
       <div className="flex items-center gap-2">
         <Input
@@ -56,6 +60,7 @@ function FieldRow({
         />
         {!readOnly && (
           <Button type="button" size="sm" onClick={handleSave} disabled={isPending}>
+            <Save />
             {isPending ? "Enregistrement…" : "Enregistrer"}
           </Button>
         )}
@@ -64,8 +69,9 @@ function FieldRow({
         <button
           type="button"
           onClick={() => setShowCitation((current) => !current)}
-          className="self-start text-xs text-muted-foreground underline underline-offset-2"
+          className="inline-flex w-fit items-center gap-1 self-start text-xs text-muted-foreground underline underline-offset-2"
         >
+          {showCitation ? <EyeOff className="size-3" /> : <Eye className="size-3" />}
           {showCitation ? "Masquer la citation" : "Voir la citation"}
         </button>
       )}
@@ -119,25 +125,31 @@ export function FieldsTable({
       </div>
       {!readOnly && (
         <Button type="button" onClick={handleValidate} disabled={isValidating}>
+          <CheckCircle2 />
           {isValidating ? "Validation…" : "Valider"}
         </Button>
       )}
       {readOnly && (
         <div className="flex flex-col gap-2">
-          <p className="text-sm text-muted-foreground">Document validé.</p>
-          <div className="flex gap-3">
+          <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <CheckCircle2 className="size-4 text-green-600 dark:text-green-400" />
+            Document validé.
+          </p>
+          <div className="flex gap-4">
             <a
               href={`/api/documents/${documentId}/export?format=json`}
               download
-              className="text-sm underline underline-offset-2"
+              className="inline-flex items-center gap-1 text-sm underline underline-offset-2"
             >
+              <FileJson className="size-4" />
               Export JSON
             </a>
             <a
               href={`/api/documents/${documentId}/export?format=csv`}
               download
-              className="text-sm underline underline-offset-2"
+              className="inline-flex items-center gap-1 text-sm underline underline-offset-2"
             >
+              <FileSpreadsheet className="size-4" />
               Export CSV
             </a>
           </div>

@@ -1,8 +1,11 @@
+import { ArrowLeft, Loader2 } from "lucide-react";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { AnalyzeButton } from "@/components/AnalyzeButton";
 import { FieldsTable } from "@/components/FieldsTable";
-import { DOC_TYPE_LABELS, STATUS_LABELS } from "@/lib/documents/labels";
+import { Badge } from "@/components/ui/badge";
+import { DOC_TYPE_LABELS, STATUS_BADGE_CLASSES, STATUS_LABELS } from "@/lib/documents/labels";
 import { extractedFieldSchema } from "@/lib/extraction/schemas";
 import { createClient } from "@/lib/supabase/server";
 
@@ -44,11 +47,21 @@ export default async function DocumentDetailPage({
 
   return (
     <main className="mx-auto flex h-screen max-w-6xl flex-col gap-4 p-8">
-      <div>
-        <h1 className="text-xl font-semibold">{document.filename}</h1>
-        <p className="text-sm text-muted-foreground">
-          {DOC_TYPE_LABELS[document.doc_type]} — {STATUS_LABELS[document.status]}
-        </p>
+      <div className="flex flex-col gap-2">
+        <Link
+          href="/"
+          className="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground underline underline-offset-2"
+        >
+          <ArrowLeft className="size-3.5" />
+          Retour à la liste
+        </Link>
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-semibold">{document.filename}</h1>
+          <Badge variant="outline" className={STATUS_BADGE_CLASSES[document.status]}>
+            {STATUS_LABELS[document.status]}
+          </Badge>
+        </div>
+        <p className="text-sm text-muted-foreground">{DOC_TYPE_LABELS[document.doc_type]}</p>
       </div>
       <div className="grid flex-1 grid-cols-1 gap-6 overflow-hidden md:grid-cols-2">
         <div className="min-h-[50vh] overflow-hidden rounded-lg border">
@@ -64,7 +77,10 @@ export default async function DocumentDetailPage({
         </div>
         <div className="flex flex-col gap-4 overflow-y-auto">
           {document.status === "processing" && (
-            <p className="text-sm text-muted-foreground">Analyse en cours…</p>
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="size-4 animate-spin" />
+              Analyse en cours…
+            </p>
           )}
           {(document.status === "uploaded" || document.status === "failed") && (
             <div className="flex flex-col gap-2">

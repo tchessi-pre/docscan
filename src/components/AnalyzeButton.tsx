@@ -1,5 +1,6 @@
 "use client";
 
+import { Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ export function AnalyzeButton({ documentId }: { documentId: string }) {
   return (
     <div className="flex flex-col gap-2">
       <Button type="button" onClick={handleClick} disabled={isPending}>
+        <Sparkles />
         {isPending ? "Analyse…" : "Analyser"}
       </Button>
       {error && <p className="text-sm text-destructive">{error}</p>}
