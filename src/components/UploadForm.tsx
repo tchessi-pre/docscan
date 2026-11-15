@@ -2,6 +2,17 @@
 
 import { useActionState } from "react";
 import { uploadDocument, type UploadDocumentResult } from "@/app/documents/actions";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { DOC_TYPE_LABELS } from "@/lib/documents/labels";
 
 async function action(
@@ -15,29 +26,39 @@ export function UploadForm() {
   const [state, formAction, isPending] = useActionState(action, null);
 
   return (
-    <form action={formAction} className="flex max-w-md flex-col gap-3">
-      <label className="flex flex-col gap-1">
-        <span>Fichier PDF</span>
-        <input type="file" name="file" accept="application/pdf" required />
-      </label>
-      <label className="flex flex-col gap-1">
-        <span>Type de document</span>
-        <select name="docType" required defaultValue="">
-          <option value="" disabled>
-            Choisir…
-          </option>
-          {Object.entries(DOC_TYPE_LABELS).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-      </label>
-      <button type="submit" disabled={isPending}>
+    <form action={formAction} className="flex max-w-md flex-col gap-4">
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="file">Fichier PDF</Label>
+        <Input id="file" type="file" name="file" accept="application/pdf" required />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="docType">Type de document</Label>
+        <Select name="docType" required items={DOC_TYPE_LABELS}>
+          <SelectTrigger id="docType" className="w-full">
+            <SelectValue placeholder="Choisir…" />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.entries(DOC_TYPE_LABELS).map(([value, label]) => (
+              <SelectItem key={value} value={value}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <Button type="submit" disabled={isPending}>
         {isPending ? "Envoi…" : "Uploader"}
-      </button>
-      {state && !state.ok && <p role="alert">{state.error}</p>}
-      {state?.ok && <p>Document envoyé.</p>}
+      </Button>
+      {state && !state.ok && (
+        <Alert variant="destructive">
+          <AlertDescription>{state.error}</AlertDescription>
+        </Alert>
+      )}
+      {state?.ok && (
+        <Alert>
+          <AlertDescription>Document envoyé.</AlertDescription>
+        </Alert>
+      )}
     </form>
   );
 }
