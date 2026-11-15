@@ -7,6 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { DeleteDocumentButton } from "@/components/DeleteDocumentButton";
 import { DOC_TYPE_LABELS, STATUS_LABELS } from "@/lib/documents/labels";
 import type { Database } from "@/lib/supabase/database.types";
 
@@ -27,6 +28,7 @@ export function DocumentList({ documents }: { documents: DocumentRow[] }) {
           <TableHead>Type</TableHead>
           <TableHead>Statut</TableHead>
           <TableHead>Date</TableHead>
+          <TableHead></TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -40,6 +42,9 @@ export function DocumentList({ documents }: { documents: DocumentRow[] }) {
             <TableCell>{DOC_TYPE_LABELS[doc.doc_type]}</TableCell>
             <TableCell>{STATUS_LABELS[doc.status]}</TableCell>
             <TableCell>{new Date(doc.created_at).toLocaleDateString("fr-FR")}</TableCell>
+            <TableCell>
+              <DeleteDocumentButton documentId={doc.id} filename={doc.filename} />
+            </TableCell>
           </TableRow>
         ))}
       </TableBody>

@@ -128,3 +128,34 @@ export async function validateDocument(documentId: string): Promise<ActionResult
   revalidatePath("/");
   return { ok: true };
 }
+
+export async function deleteDocument(documentId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const { data: document, error: fetchError } = await supabase
+    .from("documents")
+    .select("storage_path")
+    .eq("id", documentId)
+    .single();
+  if (fetchError || !document) {
+    return { ok: false, error: "Document introuvable." };
+  }
+
+  const { error: storageError } = await supabase.storage
+    .from("documents")
+    .remove([document.storage_path]);
+  if (storageError) {
+    return { ok: false, error: storageError.message };
+  }
+
+  const { error: deleteError } = await supabase
+    .from("documents")
+    .delete()
+    .eq("id", documentId);
+  if (deleteError) {
+    return { ok: false, error: deleteError.message };
+  }
+
+  revalidatePath("/");
+  return { ok: true };
+}

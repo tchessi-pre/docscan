@@ -122,7 +122,27 @@ export function FieldsTable({
           {isValidating ? "Validation…" : "Valider"}
         </Button>
       )}
-      {readOnly && <p className="text-sm text-muted-foreground">Document validé.</p>}
+      {readOnly && (
+        <div className="flex flex-col gap-2">
+          <p className="text-sm text-muted-foreground">Document validé.</p>
+          <div className="flex gap-3">
+            <a
+              href={`/api/documents/${documentId}/export?format=json`}
+              download
+              className="text-sm underline underline-offset-2"
+            >
+              Export JSON
+            </a>
+            <a
+              href={`/api/documents/${documentId}/export?format=csv`}
+              download
+              className="text-sm underline underline-offset-2"
+            >
+              Export CSV
+            </a>
+          </div>
+        </div>
+      )}
       {validateError && <p className="text-sm text-destructive">{validateError}</p>}
     </div>
   );
