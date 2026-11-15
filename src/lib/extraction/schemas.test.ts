@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  collectExtractedFields,
   extractedFieldSchema,
   otherSchema,
   quoteSchema,
@@ -113,6 +114,40 @@ describe("otherSchema", () => {
       dates_montants: [field()],
     });
     expect(result.success).toBe(true);
+  });
+});
+
+describe("collectExtractedFields", () => {
+  it("aplatit un objet structuré par champ nommé en liste plate", () => {
+    const parsed = {
+      titre: field({ key: "titre" }),
+      resume: field({ key: "resume" }),
+      points_cles: [field({ key: "point_1" }), field({ key: "point_2" })],
+    };
+
+    const fields = collectExtractedFields(parsed);
+
+    expect(fields.map((f) => f.key).sort()).toEqual(
+      ["point_1", "point_2", "resume", "titre"].sort(),
+    );
+  });
+
+  it("aplatit les lignes composites (objets de plusieurs ExtractedField)", () => {
+    const parsed = {
+      lignes_principales: [
+        {
+          designation: field({ key: "ligne_1_designation" }),
+          quantite: field({ key: "ligne_1_quantite" }),
+          prix: field({ key: "ligne_1_prix" }),
+        },
+      ],
+    };
+
+    const fields = collectExtractedFields(parsed);
+
+    expect(fields.map((f) => f.key).sort()).toEqual(
+      ["ligne_1_designation", "ligne_1_prix", "ligne_1_quantite"].sort(),
+    );
   });
 });
 

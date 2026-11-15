@@ -61,5 +61,19 @@ export const extractionSchemas = {
 export type DocType = keyof typeof extractionSchemas;
 
 export function toToolInputSchema(schema: z.ZodType) {
-  return z.toJSONSchema(schema, { target: "draft-07" });
+  return z.toJSONSchema(schema);
+}
+
+export function collectExtractedFields(value: unknown): ExtractedField[] {
+  const result = extractedFieldSchema.safeParse(value);
+  if (result.success) {
+    return [result.data];
+  }
+  if (Array.isArray(value)) {
+    return value.flatMap(collectExtractedFields);
+  }
+  if (value && typeof value === "object") {
+    return Object.values(value).flatMap(collectExtractedFields);
+  }
+  return [];
 }
