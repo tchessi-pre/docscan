@@ -5,6 +5,7 @@ import { z } from "zod";
 import { AnalyzeButton } from "@/components/AnalyzeButton";
 import { FieldsTable } from "@/components/FieldsTable";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { UserMenu } from "@/components/UserMenu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -109,6 +110,7 @@ export default async function DocumentDetailPage({
               </Button>
             </>
           )}
+          <UserMenu />
           <ThemeToggle />
         </div>
       </header>

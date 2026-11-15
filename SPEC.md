@@ -11,6 +11,8 @@ DocScan permet d'**uploader un PDF**, de **choisir son type** et d'obtenir une *
 ## 2. Périmètre
 
 ### Inclus (MVP)
+
+- Compte utilisateur (email + mot de passe) : inscription, connexion, déconnexion, mot de passe oublié
 - Upload d'un PDF (≤ 10 Mo, ≤ 30 pages)
 - Choix du type : **Devis**, **Cahier des charges**, **Autre** (extraction générique)
 - Extraction par l'API Claude (lecture native du PDF + sortie structurée via tool use)
@@ -21,14 +23,15 @@ DocScan permet d'**uploader un PDF**, de **choisir son type** et d'obtenir une *
 - Suppression d'un document (fichier + données)
 
 ### Exclus
+
 - OCR de documents scannés (on suppose des PDF texte)
 - Traitement en lot, file d'attente, webhooks
-- Multi-utilisateurs / équipes / rôles
+- Équipes, rôles et partage de documents entre utilisateurs
 - Facturation, quotas
 
 ## 3. Parcours utilisateur
 
-1. L'utilisateur arrive sur `/` → session anonyme Supabase créée automatiquement.
+1. L'utilisateur arrive sur `/` : sans session, il est redirigé vers `/login`. Il crée un compte (email + mot de passe) ou se connecte.
 2. Il dépose un PDF et choisit le type → le fichier est envoyé dans Supabase Storage, une ligne `documents` est créée (`uploaded`).
 3. Il clique sur « Analyser » → statut `processing` → appel à Claude → statut `extracted` (ou `failed` avec le message d'erreur).
 4. Sur `/documents/[id]` : le PDF est à gauche, le tableau des champs à droite. Un clic sur un champ affiche sa citation source.
@@ -40,12 +43,12 @@ Chaque champ extrait a la forme suivante :
 
 ```ts
 type ExtractedField = {
-  key: string;          // ex. "montant_ttc"
-  label: string;        // ex. "Montant TTC"
-  value: string | null; // null si absent du document
-  page: number | null;  // page source
-  quote: string | null; // extrait court du document justifiant la valeur
-  confidence: "high" | "medium" | "low";
+	key: string; // ex. "montant_ttc"
+	label: string; // ex. "Montant TTC"
+	value: string | null; // null si absent du document
+	page: number | null; // page source
+	quote: string | null; // extrait court du document justifiant la valeur
+	confidence: 'high' | 'medium' | 'low';
 };
 ```
 
@@ -56,6 +59,7 @@ type ExtractedField = {
 **Autre** : titre, auteur/émetteur, date, résumé (3 phrases), 5 points clés, dates et montants mentionnés.
 
 Règles imposées au modèle :
+
 - ne jamais inventer : une valeur absente donne `null` ;
 - toujours fournir `page` et `quote` quand `value` n'est pas null ;
 - `confidence: "low"` si l'information est ambiguë ou déduite.
@@ -117,6 +121,7 @@ Next.js (App Router, TypeScript)
 ## 7. Sécurité et RGPD
 
 - Pas de clé API ni de secret côté client ; variables listées dans `.env.example`.
+- Authentification email + mot de passe via Supabase Auth ; toutes les routes applicatives exigent une session (redirection vers `/login` sinon).
 - RLS et bucket privé ; l'accès au PDF passe par des URLs signées de courte durée.
 - Minimisation : on ne stocke que le PDF et les champs extraits, sans journaliser le contenu des documents.
 - Droit à l'effacement : la suppression d'un document efface le fichier et les données (cascade).
@@ -137,11 +142,11 @@ Next.js (App Router, TypeScript)
 Chaque tâche correspond à une PR ou un commit, et est relue avant de passer à la suivante.
 
 1. **Init** : Next.js + TypeScript strict + ESLint + Vitest + Tailwind, `CLAUDE.md`, `.env.example`.
-2. **Supabase** : migration (tables, enums, RLS, bucket et policies), génération des types, connexion anonyme.
+2. **Supabase** : migration (tables, enums, RLS, bucket et policies), génération des types.
 3. **Schémas** : schémas Zod des 3 types, conversion en JSON Schema, tests unitaires.
 4. **Upload** : formulaire, Server Action, Storage, liste des documents.
 5. **Extraction** : client Anthropic, route `/extract`, validation et nouvelle tentative, tests avec le SDK mocké.
 6. **Relecture** : page détail (PDF + tableau), édition d'un champ, validation.
 7. **Export et suppression** : export JSON/CSV, suppression en cascade.
 8. **Finitions** : états de chargement et d'erreur, mention RGPD, PDF de démo, README, déploiement.
-
+9. **Authentification** : inscription, connexion, déconnexion et mot de passe oublié (email + mot de passe), protection des routes dans `proxy.ts`.

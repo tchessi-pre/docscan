@@ -2,6 +2,7 @@ import { Info, ScanText } from "lucide-react";
 import { DocumentList } from "@/components/DocumentList";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { UploadForm } from "@/components/UploadForm";
+import { UserMenu } from "@/components/UserMenu";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { createClient } from "@/lib/supabase/server";
 
@@ -26,7 +27,10 @@ export default async function Home() {
             </p>
           </div>
         </div>
-        <ThemeToggle />
+        <div className="flex items-center gap-2">
+          <UserMenu />
+          <ThemeToggle />
+        </div>
       </header>
       <Alert>
         <Info />
