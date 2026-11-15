@@ -109,7 +109,7 @@ function toWireNode(node: z.ZodType): z.ZodType {
 }
 
 export function toToolInputSchema(schema: z.ZodType) {
-  return stripNumericBounds(z.toJSONSchema(toWireNode(schema)));
+  return stripNumericBounds(z.toJSONSchema(toWireNode(schema), { reused: "ref" }));
 }
 
 function isWireField(value: unknown): value is Record<string, unknown> {

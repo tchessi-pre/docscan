@@ -179,6 +179,13 @@ describe("toToolInputSchema", () => {
     expect(jsonSchema).not.toContain("anyOf");
     expect(jsonSchema).not.toContain('"null"');
   });
+
+  it("déduplique le schéma de champ répété via $ref (grammaire compilée trop grande sinon)", () => {
+    const jsonSchema = toToolInputSchema(quoteSchema) as Record<string, unknown>;
+
+    expect(jsonSchema.$defs).toBeDefined();
+    expect(JSON.stringify(jsonSchema)).toContain("$ref");
+  });
 });
 
 describe("convertSentinels", () => {
