@@ -49,6 +49,9 @@ export function UploadForm() {
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="file">Fichier PDF</Label>
             <FileDropzone key={state?.ok ? state.data.id : "idle"} id="file" name="file" />
+            <p className="text-xs text-muted-foreground">
+              PDF uniquement · 10 Mo et 30 pages maximum.
+            </p>
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="docType">Type de document</Label>

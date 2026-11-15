@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -46,9 +46,15 @@ export function DeleteDocumentButton({
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger
         render={
-          <Button type="button" variant="destructive" size="sm" disabled={isPending}>
-            <Trash2 />
-            {isPending ? "Suppression…" : "Supprimer"}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="text-muted-foreground hover:text-destructive"
+            disabled={isPending}
+            aria-label={`Supprimer ${filename}`}
+          >
+            {isPending ? <Loader2 className="animate-spin" /> : <Trash2 />}
           </Button>
         }
       />

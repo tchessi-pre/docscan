@@ -6,6 +6,7 @@ import { AnalyzeButton } from "@/components/AnalyzeButton";
 import { FieldsTable } from "@/components/FieldsTable";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DOC_TYPE_LABELS,
   STATUS_BADGE_CLASSES,
@@ -53,18 +54,18 @@ export default async function DocumentDetailPage({
   const StatusIcon = STATUS_ICONS[document.status];
 
   return (
-    <main className="mx-auto flex h-screen max-w-6xl flex-col gap-4 p-8">
+    <main className="mx-auto flex h-screen max-w-6xl flex-col gap-4 px-6 py-8">
       <div className="flex items-start justify-between gap-2">
         <div className="flex flex-col gap-2">
           <Link
             href="/"
-            className="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground underline underline-offset-2"
+            className="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="size-3.5" />
             Retour à la liste
           </Link>
           <div className="flex items-center gap-3">
-            <h1 className="text-xl font-semibold">{document.filename}</h1>
+            <h1 className="text-xl font-semibold tracking-tight">{document.filename}</h1>
             <Badge variant="outline" className={STATUS_BADGE_CLASSES[document.status]}>
               <StatusIcon
                 className={`size-3 ${document.status === "processing" ? "animate-spin" : ""}`}
@@ -77,7 +78,7 @@ export default async function DocumentDetailPage({
         <ThemeToggle />
       </div>
       <div className="grid flex-1 grid-cols-1 gap-6 overflow-hidden md:grid-cols-2">
-        <div className="min-h-[50vh] overflow-hidden rounded-lg border">
+        <div className="min-h-[50vh] overflow-hidden rounded-lg border bg-muted/30">
           {signedUrlData?.signedUrl ? (
             <iframe
               src={signedUrlData.signedUrl}
@@ -88,28 +89,35 @@ export default async function DocumentDetailPage({
             <p className="p-4 text-sm text-muted-foreground">PDF indisponible.</p>
           )}
         </div>
-        <div className="flex flex-col gap-4 overflow-y-auto">
-          {document.status === "processing" && (
-            <p className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="size-4 animate-spin" />
-              Analyse en cours…
-            </p>
-          )}
-          {(document.status === "uploaded" || document.status === "failed") && (
-            <div className="flex flex-col gap-2">
-              {document.status === "failed" && document.error && (
-                <p className="text-sm text-destructive">{document.error}</p>
+        <div className="overflow-y-auto">
+          <Card>
+            <CardHeader>
+              <CardTitle>Extraction</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              {document.status === "processing" && (
+                <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="size-4 animate-spin" />
+                  Analyse en cours…
+                </p>
               )}
-              <AnalyzeButton documentId={document.id} />
-            </div>
-          )}
-          {parsedFields?.success && (
-            <FieldsTable
-              documentId={document.id}
-              fields={parsedFields.data}
-              readOnly={document.status === "validated"}
-            />
-          )}
+              {(document.status === "uploaded" || document.status === "failed") && (
+                <div className="flex flex-col gap-2">
+                  {document.status === "failed" && document.error && (
+                    <p className="text-sm text-destructive">{document.error}</p>
+                  )}
+                  <AnalyzeButton documentId={document.id} />
+                </div>
+              )}
+              {parsedFields?.success && (
+                <FieldsTable
+                  documentId={document.id}
+                  fields={parsedFields.data}
+                  readOnly={document.status === "validated"}
+                />
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </main>

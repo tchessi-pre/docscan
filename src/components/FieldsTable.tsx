@@ -43,7 +43,7 @@ function FieldRow({
   }
 
   return (
-    <div className="flex flex-col gap-1.5 border-b pb-3">
+    <div className="flex flex-col gap-1.5 border-b pb-3 last:border-0 last:pb-0">
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm font-medium">{field.label}</span>
         <Badge variant="outline" className={CONFIDENCE_BADGE_CLASSES[field.confidence]}>
@@ -110,7 +110,7 @@ export function FieldsTable({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col">
         {fields.map((field) => (
           <FieldRow
             key={field.key}
