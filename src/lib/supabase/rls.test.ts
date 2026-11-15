@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
+import type { Database } from "./database.types";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -10,8 +11,8 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 describe.skipIf(!supabaseUrl || !supabaseAnonKey)(
   "RLS: isolation entre utilisateurs",
   () => {
-    async function signInAnonymously(): Promise<SupabaseClient> {
-      const client = createClient(supabaseUrl!, supabaseAnonKey!);
+    async function signInAnonymously(): Promise<SupabaseClient<Database>> {
+      const client = createClient<Database>(supabaseUrl!, supabaseAnonKey!);
       const { error } = await client.auth.signInAnonymously();
       if (error) throw error;
       return client;
