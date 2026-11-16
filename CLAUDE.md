@@ -37,10 +37,14 @@ samples/                  # PDF de démo
 ```
 
 ## Conventions
+- **DRY** : ne pas dupliquer une logique déjà écrite ailleurs ; en cas de copier-coller d'un bloc de plus de quelques lignes, l'extraire dans une fonction ou un module partagé.
+- **KISS** : préférer la solution la plus simple qui couvre le besoin réel ; pas d'abstraction, de configuration ou de couche supplémentaire pour un cas hypothétique.
 - Un schéma d'extraction n'est défini **qu'une fois**, en Zod, dans `schemas.ts`. Le JSON Schema du tool en est dérivé, jamais écrit à la main.
+- Imports : toujours l'alias `@/` pour le code interne (`@/lib/...`, `@/components/...`), jamais de chemin relatif remontant de plusieurs niveaux (`../../..`).
+- Résultat des fonctions pouvant échouer (Server Actions, appels externes) : type dédié `{ ok: true; data? } | { ok: false; error: string }`, nommé `XxxResult` (ex. `ActionResult`, `AuthResult`, `ExtractDocumentResult`) — jamais d'exception levée vers les couches UI.
 - Accès aux données : Server Components et Server Actions uniquement. Pas de clé `service_role` dans le code applicatif.
 - Les secrets (`ANTHROPIC_API_KEY`, etc.) restent côté serveur. Toute nouvelle variable est ajoutée à `.env.example`.
-- Les fonctions qui appellent des services externes renvoient `{ ok: true, data } | { ok: false, error }` au lieu de lever des exceptions dans les couches UI.
+- Composants : primitives shadcn/ui brutes dans `components/ui/`, composants métier directement dans `components/` (ou un sous-dossier par domaine, ex. `components/auth/`).
 - Nommage : fichiers en kebab-case, composants en PascalCase, colonnes SQL en snake_case.
 - Ne jamais journaliser le contenu d'un document ni une réponse complète du modèle (RGPD).
 
