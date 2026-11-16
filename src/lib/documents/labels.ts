@@ -19,6 +19,13 @@ export const DOC_TYPE_LABELS: Record<Database["public"]["Enums"]["doc_type"], st
   other: "Autre",
 };
 
+// Pour la phrase d'alerte "ne ressemble pas à...". Absent pour "other", qui
+// accepte tout document et ne déclenche jamais cette alerte.
+export const DOC_TYPE_ARTICLE_LABELS: Partial<Record<Database["public"]["Enums"]["doc_type"], string>> = {
+  quote: "un devis",
+  specification: "un cahier des charges",
+};
+
 export const DOC_TYPE_ICONS: Record<Database["public"]["Enums"]["doc_type"], LucideIcon> = {
   quote: Receipt,
   specification: ClipboardList,

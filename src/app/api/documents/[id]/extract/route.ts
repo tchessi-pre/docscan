@@ -70,6 +70,8 @@ export async function POST(
     model: result.data.model,
     input_tokens: result.data.inputTokens,
     output_tokens: result.data.outputTokens,
+    type_mismatch: result.data.typeMismatch,
+    type_mismatch_reason: result.data.typeMismatchReason,
   });
 
   if (insertError) {

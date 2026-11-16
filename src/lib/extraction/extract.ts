@@ -4,6 +4,7 @@ import {
   collectExtractedFields,
   convertSentinels,
   extractionSchemas,
+  extractTypeMismatch,
   toToolInputSchema,
   type DocType,
   type ExtractedField,
@@ -19,6 +20,8 @@ export type ExtractDocumentResult =
         model: string;
         inputTokens: number;
         outputTokens: number;
+        typeMismatch: boolean;
+        typeMismatchReason: string | null;
       };
     }
   | { ok: false; error: string };
@@ -108,6 +111,7 @@ export async function extractDocument({
 
     const parsed = schema.safeParse(convertSentinels(rawOutput));
     if (parsed.success) {
+      const typeMismatch = extractTypeMismatch(parsed.data);
       return {
         ok: true,
         data: {
@@ -115,6 +119,8 @@ export async function extractDocument({
           model: message.model,
           inputTokens: totalInputTokens,
           outputTokens: totalOutputTokens,
+          typeMismatch: typeMismatch?.mismatch ?? false,
+          typeMismatchReason: typeMismatch?.reason ?? null,
         },
       };
     }

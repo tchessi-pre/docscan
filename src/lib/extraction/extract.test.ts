@@ -36,6 +36,28 @@ const validOtherPayload = {
   dates_montants: [field({ key: "montant_1" })],
 };
 
+const validQuotePayload = {
+  emetteur: field({ key: "emetteur" }),
+  client: field({ key: "client" }),
+  numero: field({ key: "numero" }),
+  date: field({ key: "date" }),
+  validite: field({ key: "validite" }),
+  montant_ht: field({ key: "montant_ht" }),
+  tva: field({ key: "tva" }),
+  montant_ttc: field({ key: "montant_ttc" }),
+  conditions_paiement: field({ key: "conditions_paiement" }),
+  delai_realisation: field({ key: "delai_realisation" }),
+  lignes_principales: [
+    {
+      designation: field({ key: "ligne_1_designation" }),
+      quantite: field({ key: "ligne_1_quantite" }),
+      prix: field({ key: "ligne_1_prix" }),
+    },
+  ],
+  type_mismatch: false,
+  type_mismatch_reason: "",
+};
+
 function jsonMessage(payload: unknown) {
   return {
     model: "claude-sonnet-5-5",
@@ -76,12 +98,32 @@ describe("extractDocument", () => {
       expect(result.data.fields.length).toBe(10);
       expect(result.data.inputTokens).toBe(100);
       expect(result.data.outputTokens).toBe(50);
+      expect(result.data.typeMismatch).toBe(false);
+      expect(result.data.typeMismatchReason).toBeNull();
     }
     expect(createMock).toHaveBeenCalledTimes(1);
 
     const callParams = createMock.mock.calls[0][0];
     expect(callParams.output_config.format.type).toBe("json_schema");
     expect(callParams.tools).toBeUndefined();
+  });
+
+  it("signale un type_mismatch détecté par le modèle sur un devis", async () => {
+    createMock.mockResolvedValueOnce(
+      jsonMessage({
+        ...validQuotePayload,
+        type_mismatch: true,
+        type_mismatch_reason: "Il s'agit d'une facture, pas d'un devis.",
+      }),
+    );
+
+    const result = await extractDocument({ pdfBase64: "ZGF0YQ==", docType: "quote" });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.typeMismatch).toBe(true);
+      expect(result.data.typeMismatchReason).toBe("Il s'agit d'une facture, pas d'un devis.");
+    }
   });
 
   it("retente une fois en cas de sortie invalide, puis réussit", async () => {

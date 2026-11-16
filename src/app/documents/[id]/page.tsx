@@ -1,4 +1,4 @@
-import { ArrowLeft, FileJson, FileSpreadsheet, Loader2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, FileJson, FileSpreadsheet, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
@@ -6,10 +6,12 @@ import { AnalyzeButton } from "@/components/AnalyzeButton";
 import { FieldsTable } from "@/components/FieldsTable";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { UserMenu } from "@/components/UserMenu";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  DOC_TYPE_ARTICLE_LABELS,
   DOC_TYPE_LABELS,
   STATUS_BADGE_CLASSES,
   STATUS_ICONS,
@@ -146,7 +148,19 @@ export default async function DocumentDetailPage({
                   <AnalyzeButton documentId={document.id} />
                 </div>
               )}
-              {parsedFields?.success && (
+              {extraction?.type_mismatch && (
+                <Alert variant="destructive">
+                  <AlertTriangle />
+                  <AlertTitle>
+                    Ce document ne ressemble pas à{" "}
+                    {DOC_TYPE_ARTICLE_LABELS[document.doc_type] ?? DOC_TYPE_LABELS[document.doc_type]}
+                  </AlertTitle>
+                  {extraction.type_mismatch_reason && (
+                    <AlertDescription>{extraction.type_mismatch_reason}</AlertDescription>
+                  )}
+                </Alert>
+              )}
+              {parsedFields?.success && !extraction?.type_mismatch && (
                 <FieldsTable
                   documentId={document.id}
                   fields={parsedFields.data}

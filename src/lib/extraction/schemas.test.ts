@@ -3,6 +3,7 @@ import {
   collectExtractedFields,
   convertSentinels,
   extractedFieldSchema,
+  extractTypeMismatch,
   otherSchema,
   quoteSchema,
   specificationSchema,
@@ -65,6 +66,8 @@ describe("quoteSchema", () => {
           prix: field({ key: "prix" }),
         },
       ],
+      type_mismatch: false,
+      type_mismatch_reason: "",
     });
     expect(result.success).toBe(true);
   });
@@ -82,6 +85,8 @@ describe("quoteSchema", () => {
         montant_ttc: field(),
         conditions_paiement: field(),
         delai_realisation: field(),
+        type_mismatch: false,
+        type_mismatch_reason: "",
       }).success,
     ).toBe(false);
   });
@@ -99,6 +104,8 @@ describe("specificationSchema", () => {
       normes_citees: [field({ value: "NF EN 1090" })],
       criteres_selection: [field({ value: "Prix" })],
       contact: field(),
+      type_mismatch: false,
+      type_mismatch_reason: "",
     });
     expect(result.success).toBe(true);
   });
@@ -185,6 +192,28 @@ describe("toToolInputSchema", () => {
 
     expect(jsonSchema.$defs).toBeDefined();
     expect(JSON.stringify(jsonSchema)).toContain("$ref");
+  });
+});
+
+describe("extractTypeMismatch", () => {
+  it("renvoie null quand les clés sont absentes (schéma other)", () => {
+    expect(extractTypeMismatch({ titre: field() })).toBeNull();
+  });
+
+  it("renvoie mismatch=false et reason=null quand le modèle ne signale rien", () => {
+    expect(extractTypeMismatch({ type_mismatch: false, type_mismatch_reason: "" })).toEqual({
+      mismatch: false,
+      reason: null,
+    });
+  });
+
+  it("renvoie mismatch=true avec la raison quand le modèle signale un écart", () => {
+    expect(
+      extractTypeMismatch({
+        type_mismatch: true,
+        type_mismatch_reason: "Il s'agit d'une facture, pas d'un devis.",
+      }),
+    ).toEqual({ mismatch: true, reason: "Il s'agit d'une facture, pas d'un devis." });
   });
 });
 

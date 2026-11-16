@@ -17,6 +17,13 @@ const quoteLineSchema = z.object({
   prix: extractedFieldSchema,
 });
 
+// Portée par chaque schéma où le document peut manifestement ne pas
+// correspondre au type choisi (pas pour `otherSchema`, qui accepte tout).
+const typeMismatchFields = {
+  type_mismatch: z.boolean(),
+  type_mismatch_reason: z.string(),
+};
+
 export const quoteSchema = z.object({
   emetteur: extractedFieldSchema,
   client: extractedFieldSchema,
@@ -29,6 +36,7 @@ export const quoteSchema = z.object({
   conditions_paiement: extractedFieldSchema,
   delai_realisation: extractedFieldSchema,
   lignes_principales: z.array(quoteLineSchema),
+  ...typeMismatchFields,
 });
 
 export const specificationSchema = z.object({
@@ -41,6 +49,7 @@ export const specificationSchema = z.object({
   normes_citees: z.array(extractedFieldSchema),
   criteres_selection: z.array(extractedFieldSchema),
   contact: extractedFieldSchema,
+  ...typeMismatchFields,
 });
 
 export const otherSchema = z.object({
@@ -158,4 +167,21 @@ export function collectExtractedFields(value: unknown): ExtractedField[] {
     return Object.values(value).flatMap(collectExtractedFields);
   }
   return [];
+}
+
+export type TypeMismatch = { mismatch: boolean; reason: string | null };
+
+// `null` pour `otherSchema`, qui n'a pas ces clés (il accepte tout document).
+export function extractTypeMismatch(value: unknown): TypeMismatch | null {
+  if (!value || typeof value !== "object" || !("type_mismatch" in value)) {
+    return null;
+  }
+  const { type_mismatch, type_mismatch_reason } = value as {
+    type_mismatch: boolean;
+    type_mismatch_reason: string;
+  };
+  return {
+    mismatch: type_mismatch,
+    reason: type_mismatch_reason === "" ? null : type_mismatch_reason,
+  };
 }

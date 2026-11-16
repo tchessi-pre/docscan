@@ -6,15 +6,22 @@ const COMMON_RULES = `Règles impératives :
 - Mets "confidence" à "low" si l'information est ambiguë ou déduite plutôt que lue directement, "medium" en cas de doute léger, "high" sinon.
 - Pour chaque champ, renseigne "key" (identifiant stable en snake_case, ex. "montant_ttc") et "label" (libellé humain en français, ex. "Montant TTC").`;
 
+const TYPE_MISMATCH_RULE = (expected: string) =>
+  `Avant d'extraire les champs, vérifie que ce document est bien ${expected}. S'il s'agit manifestement d'autre chose (une facture, un CV, un rapport, une notice, etc.), mets "type_mismatch" à true et explique en une phrase dans "type_mismatch_reason" ce que semble être le document. Sinon mets "type_mismatch" à false et "type_mismatch_reason" à "". Un devis ou cahier des charges inhabituel ou incomplet reste "type_mismatch": false — ne déclenche ça que si le document n'est clairement pas de ce type.`;
+
 const SYSTEM_PROMPTS: Record<DocType, string> = {
   quote: `Tu extrais les informations d'un devis.
 
 ${COMMON_RULES}
 
+${TYPE_MISMATCH_RULE("un devis")}
+
 Champs attendus : émetteur, client, numéro, date, validité, montant HT, TVA, montant TTC, conditions de paiement, délai de réalisation, et les lignes principales (désignation, quantité, prix de chaque ligne). Pour chaque ligne, numérote les clés (ex. "ligne_1_designation", "ligne_1_quantite", "ligne_1_prix") et les libellés (ex. "Désignation (ligne 1)").`,
   specification: `Tu extrais les informations d'un cahier des charges.
 
 ${COMMON_RULES}
+
+${TYPE_MISMATCH_RULE("un cahier des charges")}
 
 Champs attendus : maître d'ouvrage, objet, date limite de réponse, budget indicatif, contact, et les listes suivantes où chaque élément est un champ à part entière : livrables, exigences techniques clés, normes citées, critères de sélection.`,
   other: `Tu extrais les informations clés d'un document.
