@@ -1,11 +1,19 @@
 "use client";
 
-import { ChevronRight, FileText, Inbox } from "lucide-react";
+import { ChevronRight, FileText, Inbox, SearchX } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { cn } from "cn";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -24,9 +32,16 @@ import {
   STATUS_ICONS,
   STATUS_LABELS,
 } from "@/lib/documents/labels";
+import type { Database } from "@/lib/supabase/database.types";
+
+type StatusFilter = "all" | Database["public"]["Enums"]["doc_status"];
+type TypeFilter = "all" | Database["public"]["Enums"]["doc_type"];
 
 export function ExtractionsTable({ rows }: { rows: DocumentExtraction[] }) {
   const [collapsed, setCollapsed] = useState<string[]>([]);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
 
   function toggle(documentId: string) {
     setCollapsed((current) =>
@@ -52,9 +67,80 @@ export function ExtractionsTable({ rows }: { rows: DocumentExtraction[] }) {
     );
   }
 
+  const query = search.trim().toLowerCase();
+  const filteredRows = rows.filter(({ document, fields }) => {
+    const matchesStatus = statusFilter === "all" || document.status === statusFilter;
+    const matchesType = typeFilter === "all" || document.doc_type === typeFilter;
+    const matchesSearch =
+      query === "" ||
+      document.filename.toLowerCase().includes(query) ||
+      fields.some(
+        (field) =>
+          field.label.toLowerCase().includes(query) ||
+          (field.value ?? "").toLowerCase().includes(query),
+      );
+    return matchesStatus && matchesType && matchesSearch;
+  });
+
   return (
-    <Card>
-      <CardContent className="p-0">
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap gap-2">
+        <Input
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Rechercher un document ou un champ…"
+          className="max-w-xs"
+        />
+        <Select
+          value={statusFilter}
+          onValueChange={(value) => setStatusFilter(value as StatusFilter)}
+          items={{ all: "Tous les statuts", ...STATUS_LABELS }}
+        >
+          <SelectTrigger className="w-fit">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les statuts</SelectItem>
+            {Object.entries(STATUS_LABELS).map(([value, label]) => (
+              <SelectItem key={value} value={value}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={typeFilter}
+          onValueChange={(value) => setTypeFilter(value as TypeFilter)}
+          items={{ all: "Tous les types", ...DOC_TYPE_LABELS }}
+        >
+          <SelectTrigger className="w-fit">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les types</SelectItem>
+            {Object.entries(DOC_TYPE_LABELS).map(([value, label]) => (
+              <SelectItem key={value} value={value}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      {filteredRows.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center gap-2 py-12 text-center">
+            <span className="flex size-10 items-center justify-center rounded-full bg-muted">
+              <SearchX className="size-5 text-muted-foreground" />
+            </span>
+            <p className="text-sm font-medium">Aucun résultat</p>
+            <p className="text-sm text-muted-foreground">
+              Essayez d&apos;ajuster la recherche ou les filtres.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+      <Card>
+        <CardContent className="p-0">
         <Table>
           <TableHeader>
             <TableRow>
@@ -65,7 +151,7 @@ export function ExtractionsTable({ rows }: { rows: DocumentExtraction[] }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.map(({ document, fields }) => {
+            {filteredRows.map(({ document, fields }) => {
               const StatusIcon = STATUS_ICONS[document.status];
               const isCollapsed = collapsed.includes(document.id);
               return [
@@ -155,7 +241,9 @@ export function ExtractionsTable({ rows }: { rows: DocumentExtraction[] }) {
             })}
           </TableBody>
         </Table>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+      )}
+    </div>
   );
 }
